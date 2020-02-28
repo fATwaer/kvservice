@@ -138,7 +138,7 @@ func (rf *Raft) sendInstallSnapshot(server int, args *InstallSnapshotArgs, reply
 	return ok
 }
 
-func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapshotReply) {
+func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapshotReply) error {
 	DPrintf("[snapshot] %d->%d\n\t\t%#v", args.LeaderId, rf.me, args)
 
 	DPrintf("\t[snapshot] %d server try lock", rf.me)
@@ -156,7 +156,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	if rf.currentTerm > args.Term {
 		DPrintf("\t[snapshot] %d server term not right", rf.me)
 		reply.Term = rf.currentTerm
-		return
+		return nil
 	}
 	DPrintf("\t[snapshot] %d server term right", rf.me)
 
@@ -172,14 +172,14 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	// 4. Reply and wait for more data chunks if done is false
 	if args.Done == false {
 		panic("done == false") // not implement
-		return
+		return nil
 	}
 
 	// 5. Save snapshot file, discard any existing or partial snapshot
 	//    with a smaller index
 	if args.LastIncludedIndex <= rf.snapshotLastIndex {
 		DPrintf("\t[snapshot] %d server snapshot size > %d snapshot size", rf.me, args.LeaderId)
-		return
+		return nil
 	}
 
 
@@ -209,7 +209,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 				Command:      ReadSnapshot(args.Data),
 				CommandIndex: -1,
 			}
-			return
+			return nil
 		}
 	}
 

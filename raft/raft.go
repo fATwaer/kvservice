@@ -1015,8 +1015,8 @@ func trySend(val bool, ch chan bool) bool {
 
 // "broadcastTime ≪ electionTimeout ≪ MTBF"
 const (
-	ElectionTimeOut = 100 * time.Second
-	HeartBeatPeriod = 10 * time.Second
+	ElectionTimeOut = 30 * time.Second
+	HeartBeatPeriod = 2 * time.Second
 )
 
 type state int
