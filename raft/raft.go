@@ -22,8 +22,9 @@ import (
 	"sort"
 	"sync"
 	"time"
+	labrpc "kvservice/realrpc"
 )
-import "labrpc"
+// import "labrpc"
 
 // import "bytes"
 // import "labgob"
@@ -198,7 +199,7 @@ type AppendEntryReply struct {
 //
 // example RequestVote RPC handler.
 // locked
-func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
+func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) error {
 	// Your code here (2A, 2B).
 	// 2A
 	lastLogIndex := rf.lastIndex()
@@ -226,12 +227,12 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	if rf.currentTerm >= args.Term {
 		reply.Term = rf.currentTerm
 		DPrintf("[x][server %d] term < [server %d]", args.CandidateId, rf.me)
-		return
+		return nil
 	}
 	rf.currentTerm = args.Term
 	if rf.votedFor != -1 {
 		DPrintf("\t[x][server %d] not get vote(%d) from [server %d]\n", args.CandidateId, rf.votedFor, rf.me)
-		return
+		return nil
 	}
 	// "If votedFor is null or candidateId, and candidate’s log is
 	// at least as up-to-date as receiver’s log, grant vote"
@@ -240,7 +241,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	if 	lastLogTerm > args.LastLogTerm ||
 		lastLogTerm == args.LastLogTerm && lastLogIndex > args.LastLogIndex {
 		DPrintf("\t[x][server %d] not get vote(%d) from [server %d]\n", args.CandidateId, rf.votedFor, rf.me)
-		return
+		return nil
 	}
 
 	rf.votedFor = args.CandidateId
@@ -253,6 +254,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.resetElectionTimeOut()
 	rf.mu.Lock()
 	DPrintf("\t[+][server %d] get vote from [server %d]\n", args.CandidateId, rf.me)
+	return nil
 }
 
 //
@@ -294,9 +296,9 @@ func (rf *Raft) sendAppendEntry(server int, args *AppendEntryArgs, reply *Append
 	return ok
 }
 
-func (rf *Raft) AppendEntry(args *AppendEntryArgs, reply *AppendEntryReply) {
-	a.Lock()
-	defer  a.Unlock()
+func (rf *Raft) AppendEntry(args *AppendEntryArgs, reply *AppendEntryReply) error {
+	//a.Lock()
+	//defer  a.Unlock()
 	//DPrintf("s%d %#v", rf.me, args)
 	DPrintf("%#v", args)
 	DPrintf("[AppendEntry] term %d(%d)->%d(%d)", args.LeaderId, args.Term,	rf.me, rf.currentTerm)
@@ -329,7 +331,7 @@ func (rf *Raft) AppendEntry(args *AppendEntryArgs, reply *AppendEntryReply) {
 	if args.Term < rf.currentTerm {
 		DPrintf("(follower %d(%d) > leader %d(%d))", rf.me, rf.currentTerm, args.LeaderId, args.Term)
 		reply.Term = rf.currentTerm
-		return
+		return nil
 	}
 
 	/* PrevLogIndex and PrevLogTerm check */
@@ -338,12 +340,12 @@ func (rf *Raft) AppendEntry(args *AppendEntryArgs, reply *AppendEntryReply) {
 	if rf.snapshotLastIndex == 0 {
 		if len(rf.log) <= args.PrevLogIndex {
 			DPrintf("\tnormal case: doesn't contain the entry")
-			return
+			return nil
 		}
 		if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
 			DPrintf("\tnormal case: prevLogTerm don't match follower %d, leader %d",
 				rf.log[args.PrevLogIndex].Term, args.Term)
-			return
+			return nil
 		}
 	} else {
 		//if args.PrevLogIndex == rf.snapshotLastIndex && args.PrevLogTerm != rf.snapshotLastTerm {
@@ -373,7 +375,7 @@ func (rf *Raft) AppendEntry(args *AppendEntryArgs, reply *AppendEntryReply) {
 			ok = true
 		}
 		if !ok {
-			return
+			return nil
 		}
 	}
 
@@ -449,6 +451,7 @@ func (rf *Raft) AppendEntry(args *AppendEntryArgs, reply *AppendEntryReply) {
 	}
 
 	DPrintf("\t server %d appendEntry from %d end", rf.me, args.LeaderId)
+	return nil
 }
 
 //
@@ -581,7 +584,6 @@ func Make(peers []*labrpc.ClientEnd, me int,
 
 		}
 	}()
-
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
@@ -1013,8 +1015,8 @@ func trySend(val bool, ch chan bool) bool {
 
 // "broadcastTime ≪ electionTimeout ≪ MTBF"
 const (
-	ElectionTimeOut = 150 * time.Millisecond
-	HeartBeatPeriod = 50 * time.Millisecond
+	ElectionTimeOut = 100 * time.Second
+	HeartBeatPeriod = 10 * time.Second
 )
 
 type state int

@@ -1,7 +1,7 @@
 package raftkv
 
 import (
-	"labrpc"
+	labrpc "kvservice/realrpc"
 	"time"
 )
 import "crypto/rand"

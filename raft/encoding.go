@@ -1,8 +1,8 @@
 package raft
 
 import (
-	"6.824/src/labgob"
 	"bytes"
+	"kvservice/labgob"
 )
 
 func EncodeOne(variable interface{}) []byte {

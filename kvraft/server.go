@@ -3,10 +3,10 @@ package raftkv
 import (
 	"bytes"
 	"encoding/json"
-	"labgob"
-	"labrpc"
+	"kvservice/labgob"
+	"kvservice/raft"
+	"kvservice/realrpc"
 	"log"
-	"raft"
 	"sync"
 	"time"
 )
@@ -59,12 +59,12 @@ type KVServer struct {
 	leaderChange chan bool
 }
 
-func (kv *KVServer)Register(args *RegisterArgs, reply *RegisterReply) {
+func (kv *KVServer)Register(args *RegisterArgs, reply *RegisterReply) error {
 	_, isLeader := kv.rf.GetState()
 	//DPrintf("[Register] server %d is leader? %v", kv.me, isLeader)
 	if !isLeader {
 		reply.IsLeader = false
-		return
+		return nil
 	} else {
 		reply.IsLeader = true
 		kv.mu.Lock()
@@ -74,7 +74,7 @@ func (kv *KVServer)Register(args *RegisterArgs, reply *RegisterReply) {
 		reply.Sid = kv.me
 		DPrintf("register client %d", reply.Cid)
 	}
-
+	return nil
 }
 
 //func (kv *KVServer) passOp (id UniqueID) Err {
@@ -96,7 +96,7 @@ func (kv *KVServer)Register(args *RegisterArgs, reply *RegisterReply) {
 //	return ""
 //}
 
-func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
+func (kv *KVServer) Get(args *GetArgs, reply *GetReply) error {
 	// Your code here.
 
 	// err := kv.passOp(args.Id)
@@ -105,7 +105,7 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	if !isLeader {
 		reply.WrongLeader = true
 		reply.Err = ErrNotLeader
-		return
+		return nil
 	}
 	reply.WrongLeader = false
 
@@ -156,15 +156,16 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 		delete(kv.rpcMap, args.Id)
 		kv.mu.Unlock()
 	}
+	return nil
 }
 
-func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
+func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) error {
 	// Your code here.
 	_, isLeader := kv.rf.GetState()
 	if !isLeader {
 		reply.WrongLeader = true
 		reply.Err = ErrNotLeader
-		return
+		return nil
 	}
 	reply.WrongLeader = false
 
@@ -198,6 +199,8 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	kv.mu.Lock()
 	delete(kv.rpcMap, args.Id)
 	kv.mu.Unlock()
+
+	return nil
 }
 
 //
@@ -391,6 +394,10 @@ func (kv *KVServer) resumeState (persister *raft.Persister) {
 	}
 }
 
+func (kv *KVServer) GetRaft ()*raft.Raft {
+	return kv.rf
+}
+
 
 
 //
@@ -407,7 +414,7 @@ func (kv *KVServer) resumeState (persister *raft.Persister) {
 // StartKVServer() must return quickly, so it should start goroutines
 // for any long-running work.
 //
-func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persister, maxraftstate int) *KVServer {
+func StartKVServer(servers []*realrpc.ClientEnd, me int, persister *raft.Persister, maxraftstate int) *KVServer {
 	// call labgob.Register on structures you want
 	// Go's RPC library to marshall/unmarshall.
 	labgob.Register(Op{})

@@ -1,9 +1,9 @@
 package raft
 
 import (
-	"6.824/src/labgob"
 	"bytes"
 	"fmt"
+	"kvservice/labgob"
 )
 
 type Snapshot struct {
