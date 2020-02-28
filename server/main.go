@@ -10,17 +10,15 @@ import (
 	"net/rpc"
 	"os"
 	"strconv"
+	"strings"
 )
-
-// listen on local
-var rfpeers = []string {"localhost:20001", "localhost:20002", "localhost:20003"}
-// listen on local
-var kvpeers = []string {"localhost:20201", "localhost:20202", "localhost:20203"}
 
 type server struct {
 	me int
 	kv *raftkv.KVServer
 	rf *raft.Raft
+	rfpeers []string
+	kvpeers []string
 }
 
 func GetPeers(allPeers []string) []*realrpc.ClientEnd {
@@ -34,12 +32,12 @@ func GetPeers(allPeers []string) []*realrpc.ClientEnd {
 	return peers
 }
 
-func listen(rpcs *rpc.Server, host string) {
-	listenQueue, err := net.Listen("tcp", host)
+func listen(rpcs *rpc.Server, port string) {
+	listenQueue, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatal("listen error", err)
 	}
-	fmt.Println("kv server listen at", host)
+	fmt.Println("kv server listen at", port)
 	for {
 		conn, err := listenQueue.Accept()
 		if err != nil {
@@ -52,18 +50,20 @@ func listen(rpcs *rpc.Server, host string) {
 }
 
 func (s *server)listenAsKvServer() {
-	rfs := GetPeers(rfpeers)
-	s.kv = raftkv.StartKVServer(rfs, s.me, &raft.Persister{}, -1)
+	rfs := GetPeers(s.rfpeers)
+	s.kv = raftkv.StartKVServer(rfs, s.me, &raft.Persister{}, 2000)
 	s.rf = s.kv.GetRaft()
 	kvrpcs := rpc.NewServer()
 	kvrpcs.Register(s.kv)
-	go listen(kvrpcs, kvpeers[s.me])
+	port := ":"+strings.Split(s.kvpeers[s.me], ":")[1]
+	go listen(kvrpcs, port)
 }
 
 func (s *server)listenAsRaft() {
 	rfrpcs := rpc.NewServer()
 	rfrpcs.Register(s.rf)
-	listen(rfrpcs, rfpeers[s.me])
+	port := ":"+strings.Split(s.rfpeers[s.me], ":")[1]
+	listen(rfrpcs, port)
 }
 
 func (s *server)serv() {
@@ -75,20 +75,28 @@ func (s *server)serv() {
 }
 
 func main() {
+
+	cfg := GetConfig("server/config.json")
+
 	if len(os.Args) < 2 {
-		fmt.Printf("usage: %s server idx\n", os.Args[0])
-		for i, v := range kvpeers {
-			fmt.Printf("%d : %s\n", i, v)
+		fmt.Printf("usage: %s idx\n", os.Args[0])
+		for i := 0; i < len(cfg.KVPeers); i++ {
+			fmt.Printf("%d : kv(%s) rf(%s)\n", i, cfg.KVPeers[i], cfg.RFPeers[i])
 		}
 		return
 	}
-
 	me, err := strconv.Atoi(os.Args[1])
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	s := server{me:me}
+	s := server{
+		me:      me,
+		kv:      nil,
+		rf:      nil,
+		rfpeers: cfg.RFPeers,
+		kvpeers: cfg.KVPeers,
+	}
 	s.serv()
 }
