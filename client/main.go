@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-var kvpeers = []string {"localhost:20201", "localhost:20202", "localhost:20203"}
+var kvpeers = []string {"106.13.211.207:20201", "fatwaer.store:20202", "34.92.0.178:20203"}
 
 //
 // Client
