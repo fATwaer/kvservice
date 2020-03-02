@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="favicon.png" type="image/x-icon"/>
     <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
-    <title>raft log</title>
+    <title>Raft state</title>
 </head>
 
 <script>
@@ -15,7 +15,7 @@
         getlog()
     }, 5000)
     function getlog() {
-        $.ajax({url:"raft.info1",success:function(result){
+        $.ajax({url:"raft.dump",success:function(result){
                 $("#log").html(result);
             }});
     }
@@ -23,8 +23,10 @@
 </script>
 
 <body>
-<h1>Raft Log</h1>
-<p id="begin">request raft.info file every 5 seconds </p><a href="#last">-> Go to bottom</a>
+<h1>Raft State</h1>
+<p id="begin">request raft.dump file every 5 seconds </p>
+<p>clean log every 10 minutes</p>
+<a href="#last">-> Go to bottom</a>
 <pre id="log"></pre>
 
 </body>

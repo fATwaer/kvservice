@@ -2,8 +2,8 @@ package raft
 
 import (
 	"bytes"
-	"fmt"
 	"kvservice/labgob"
+	"log"
 )
 
 type Snapshot struct {
@@ -18,7 +18,7 @@ func (rf *Raft) DetectThreshold (maxRaftState int) bool {
 		return false
 	}
 	currentRaftStateSize := rf.persister.RaftStateSize()
-	fmt.Printf("%d detect current Raft size: %d, maxstate size: %d\n",
+	log.Printf("%d detect current Raft size: %d, maxstate size: %d\n",
 		rf.me, currentRaftStateSize, maxRaftState)
 	if currentRaftStateSize <= maxRaftState {
 		return false
@@ -28,12 +28,12 @@ func (rf *Raft) DetectThreshold (maxRaftState int) bool {
 }
 
 func (rf *Raft) Snapshot (snapshot *Snapshot) {
-	fmt.Printf("%d snap begin at %d, log len %d\n",
+	log.Printf("%d snap begin at %d, log len %d\n",
 		rf.me, snapshot.LastIncludeIndex, len(rf.log))
 
 
 	rf.mu.Lock()
-	defer fmt.Printf("%d snapshot locker unlocked\n", rf.me)
+	defer log.Printf("%d snapshot locker unlocked\n", rf.me)
 	defer rf.mu.Unlock()
 
 	logIdx := rf.logIndex(snapshot.LastIncludeIndex)
@@ -52,7 +52,7 @@ func (rf *Raft) Snapshot (snapshot *Snapshot) {
 	state := rf.PersistentState()
 	rf.persister.SaveStateAndSnapshot(state, snap)
 
-	fmt.Printf("%d snap done, rf log length %d\n", rf.me, len(rf.log))
+	log.Printf("%d snap done, rf log length %d\n", rf.me, len(rf.log))
 }
 
 
@@ -244,6 +244,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 		Command:      ReadSnapshot(args.Data),
 		CommandIndex: -1,
 	}
+	return nil
 }
 
 

@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="favicon.png" type="image/x-icon"/>
     <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
-    <title>raft log</title>
+    <title>Raft log</title>
 </head>
 
 <script>
@@ -15,7 +15,7 @@
         getlog()
     }, 5000)
     function getlog() {
-        $.ajax({url:"raft.info1",success:function(result){
+        $.ajax({url:"raft.info",success:function(result){
                 $("#log").html(result);
             }});
     }

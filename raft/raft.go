@@ -348,23 +348,7 @@ func (rf *Raft) AppendEntry(args *AppendEntryArgs, reply *AppendEntryReply) erro
 			return nil
 		}
 	} else {
-		//if args.PrevLogIndex == rf.snapshotLastIndex && args.PrevLogTerm != rf.snapshotLastTerm {
-		//	DPrintf("\tSnapshot case: lastTerm not equal")
-		//	return
-		//}
-		//
-		//lastIndex := rf.lastIndex()
-		//if lastIndex < args.PrevLogIndex {
-		//	DPrintf("\tSnapshot case: prevLogIndex > lastIndex")
-		//	return
-		//}
-		//
-		//DPrintf("args.PrevLogIndex %d, lastIndex %d len(rf.log) %d snapshot %d",
-		//	args.PrevLogIndex, rf.lastIndex(), len(rf.log), rf.snapshotLastIndex)
-		//if len(rf.log) != 0 && rf.realTerm(args.PrevLogIndex) != args.PrevLogTerm {
-		//	DPrintf("\t\tSnapshot case: prevLogTerm don't match")
-		//	return
-		//}
+
 		ok := false
 		if args.PrevLogIndex == rf.snapshotLastIndex && args.PrevLogTerm == rf.snapshotLastTerm {
 			ok = true
@@ -587,7 +571,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
-
+	go rf.logger()
 	return rf
 }
 
