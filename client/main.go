@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-var kvpeers = []string {"106.13.211.207:20201", "fatwaer.store:20202", "34.92.0.178:20203"}
+var kvpeers = []string {"106.13.211.207:20201", "fatwaer.store:20202", "18.162.39.157:20203"}
 
 //
 // Client
@@ -30,9 +30,11 @@ func main()  {
 	cli.Put("hello", "world")
 	log.Println(cli.Get("hello"))
 
-	cli.Put("1", "")
-	for i := 0; i < 100; i++ {
-		cli.Append("1",strconv.Itoa(i)+" ")
+	for j := 0; j < 10; j++ {
+		cli.Put(strconv.Itoa(j), "")
+		for i := 0; i < 20; i++ {
+			cli.Append(strconv.Itoa(j),strconv.Itoa(i)+" ")
+		}
+		log.Println(cli.Get(strconv.Itoa(j)))
 	}
-	log.Println(cli.Get("1"))
 }
