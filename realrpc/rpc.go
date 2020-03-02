@@ -3,11 +3,13 @@ package realrpc
 import (
 	"log"
 	"net/rpc"
+	"sync"
 )
 
 type ClientEnd struct {
 	Endname string   // this end-point's name
 	Peer string 	 // hostname:port
+	mu sync.Mutex
 	conn *rpc.Client
 }
 
@@ -16,7 +18,6 @@ type ClientEnd struct {
 // the return value indicates success; false means that
 // no reply was received from the server.
 func (e *ClientEnd) Call(svcMethod string, args interface{}, reply interface{}) bool {
-
 	if e.conn == nil && e.connect() == false {
 		return false
 	}
@@ -24,8 +25,12 @@ func (e *ClientEnd) Call(svcMethod string, args interface{}, reply interface{}) 
 	err := e.conn.Call(svcMethod, args, reply)
 	if err != nil {
 		log.Println("error:", err)
-		e.conn.Close()
+		e.mu.Lock()
+		if e.conn != nil {
+			e.conn.Close()
+		}
 		e.conn = nil
+		e.mu.Unlock()
 		return false
 	}
 	return  true
